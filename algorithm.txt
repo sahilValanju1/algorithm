@@ -1,0 +1,508 @@
+EXP1
+
+Theory :An assembler is a translator that translates an assembler program into a conventional machine
+language program. Basically, the assembler goes through the program one line at a time, and generates
+machine code for that instruction. Then the assembler proceeds to the next instruction. In this way, the
+entire machine code program is created. For most instructions this process works fine, for example for
+instructions that only reference registers, the assembler can compute the machine code easily, since the
+assembler knows where the registers are.
+Consider an assembler instruction like the following
+JMP LATER
+...
+...
+LATER:
+This is known as a forward reference. If the assembler is processing the file one line at a time, then it
+doesn't know where LATER is when it first encounters the jump instruction. So, it doesn't know if the
+jump is a short jump, a near jump or a far jump.
+So, Assembler scan the code twice. The first time, just count how long the machine code instructions will
+be, just to find out the addresses of all the labels. Also, create a table that has a list of all the addresses and
+where they will be in the program. This table is known as the symbol table. On the second scan, generate
+the machine code, and use the symbol table to determine how far away jump labels are, and to generate
+the most efficient instruction.
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 12
+
+This is known as a two-pass assembler. Each pass scans the program, the first pass generates the symbol
+table and the second pass generates the machine code. I have created a listing of an assembler
+program that has the machine code listed, and the symbol table listed.
+Algorithm for pass 1:
+Step 1: Start
+Step 2: Initialize location counter to zero.
+Step 3: Read opcode field of next instruction.
+Step 4: Search opcode in pseudo opcode table.
+Step 5: If opcode is found in Pseudo Opcode Table
+Step 5.1: If it is ‘DS’ or ‘DC’
+Adjust location counter to proper alignment.
+Assign length of data field to ‘L’
+Go to step 9
+Step 5.2: If it is ‘EQU’
+Evaluate operand field
+Assign value to symbol in label field
+Go to step 3
+Step 5.3: If it is ‘USING’ or ‘DROP’ Go to step 3
+Step 5.4: If it is ‘END’
+Assign storage locations to literals
+Go to step 12
+Step 6: Search opcode in Machine Opcode Table.
+Step 7: Assign it’s length to ‘L’.
+Step 8: Process any literals and enter them into Literal Table.
+Step 9: If symbol is there in label field assign current value of Location Counter to symbol.
+Step 10: Location Counter = Location Counter + L.
+Step 11: Go to step 3
+Step 12: Stop.
+Algorithm for Pass 2:
+Step 1: Start
+Step 2: Initialize location counter to zero.
+Step 3: Read opcode field of next instruction.
+Step 4: Search opcode in pseudo opcode table.
+Step 5: If opcode is found in Pseudo Opcode Table
+Step 5.1: If it is ‘DS’ or ‘DC’
+Adjust location counter to proper alignment.
+If it is ‘DC’ opcode form constant and insert in assembled program
+Assign length of data field to ‘L’
+Go to step 6.4
+Step 5.2: If it is ‘EQU’ or ‘START’ ignore it.Go to step 3
+Step 5.3: If it is ‘USING’
+Evaluate operand and enter base reg no. and value into base table
+Go to step 3
+Step 5.3: If it is ‘DROP’
+Indicate base reg no. available in base table Go to step 3
+Step 5.4: If it is ‘END’
+Generate literals for entries in Literal table
+Go to step 12
+Step 6: Search opcode in Machine Opcode Table.
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 13
+
+Step 7: Get opcode byte and format code.
+Step 8: Assign it’s length to ‘L’.
+Step 9: Check type of instruction.
+Step 10: If it is of ‘RR’ type
+Step 10.1: Evaluate both register expressions and insert into second byte.
+Step 10.2: Assemble instruction.
+Step 10.3: Location Counter = Location Counter + L.
+Step 10.4: Go to step 3
+Step 11: If it is of ‘RX’ type
+Step 11.1: Evaluate register and index expressions and insert into second byte.
+Step 11.2: Calculate effective address of operand.
+Step 11.3: Determine appropriate displacement and base register
+Step 11.2: Put base and displacement into bytes 3 and 4
+Step 11.3: Location Counter = Location Counter + L.
+Step 11.4: Go to step 10.2
+Step 12: Stop.
+
+EXP2
+
+Theory
+• Macro represents a group of commonly used statements in the source programming language.
+• Macro Processor replaces each macro instruction with the corresponding group of source
+language statements. This is known as the expansion of macros.
+• Using Macro instructions programmer can leave the mechanical details to be handled by the
+macro processor.
+• Macro Processor designs are not directly related to the computer architecture on which it runs.
+• Macro Processor involves definition, invocation, and expansion.
+Algorithm for PASS – I
+1. Set MDTC(macro definition table counter) to 1
+2. Set MNTC(macro name table counter) to 1
+3. Read next statement from source program
+4. If this source statement is pseudo-opcode MACRO (start of macro definition) then goto step 5 else
+goto step 16
+5. Read next statement from source program(macro name line)
+6. Enter macro name found in step 5 in name field of MNT(macro name table) and Also enter current
+value of MDTC in MDT index field of MNT
+7. Increment MNTC by 1
+8. Prepare argument list array
+9. Enter macro name into MDT at index MDTC
+10. Increment MDTC by one
+11. Read next statement from source program.
+12. Create and substitute index notation for arguments in the source statement if any
+13. Enter this line into the MDT
+14. Increment MDTC by one
+15. Check if currently red source statement is pseudo-opcode MEND. If yes then goto step 3 else goto
+step 11
+16. Write source program statement as it is in file(output of pass 1 s.p.)
+17. Check if pseudo opcoce END(end of source program) is encountered . If yes goto step 18 else goto
+step 19
+18. goto PASS – II
+19. Go to step 3
+20. end of PASS –I
+Algorithm for PASS – II
+1. Read next statement from source program(from output s.p. file of pass I)
+2. Search in MNT for match with operation code(mnemonic)
+3. If macro name found the goto step 4 else goto step 11
+4. Retrieve MDT index from MNT and store it in MDTP(macro definition table pointer).
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 22
+5. Set up argument list array (store actual parameter in ala)
+6. Increment MDTP by 1
+7. Retrieve line pointer by MDTP from MDT
+8. Substitute index notation by actual parameter from argument list array if any
+9. Check if currently retrieved line is pseudo opcode MEND, if yes go to step 1 else goto step 10
+10. Write the statement formed in step 8 to expanded source file and go to step 6
+11. Write source statement directly into expanded source file
+12. Check if pseudo opcode END(end of s.p. output of pass I) encountered, if yes goto step 13 else goto
+step 1
+13. End of PASS-II
+
+EXP3
+
+Theory:
+Lexical analysis is the process of converting a sequence of characters into a sequence of tokens. Programs
+performing lexical analysis are called lexical analyzers or lexers. The specification of a programming
+language will include a set of rules, often expressed syntactically, specifying the set of possible character
+sequences that can form a token or lexeme. The whitespace characters are often ignored during lexical
+analysis.
+A token can look like anything; it just needs to be a useful part of the structured text. Consider this
+expression in the C programming language:
+
+newval:=oldval+12;
+
+Tokenized in the following table:
+
+Lexeme Token type
+newval IDENT
+:= ASSIGN_OP
+oldval IDENT
++ ADD_OP
+12 NUMBER
+; SEMICOLON
+
+Tokens are frequently defined by regular expressions, which are understood by a lexical analyser generator
+such as lex. The lexical analyser (either generated automatically by a tool like lex, or hand-crafted) reads
+in a stream of characters, identifies the lexemes in the stream, and categorizes them into tokens. This is
+called "tokenizing." If the lexer finds an invalid token, it will report an error.
+Following tokenizing is parsing. From there, the interpreted data may be loaded into data structures, for
+general use, interpretation, or compiling.
+
+Stepwise-Procedure:
+1. Read a ’C’ file as input.
+2. Read input files of functions, operators, keywords.
+3. Display a token for every lex unit.
+4. Create files for symbols and literals.
+
+EXP4
+
+Theory: One of the most straightforward forms of parsing is recursive descent parsing. This is a top-down
+process in which the parser attempts to verify that the syntax of the input stream is correct as it is read from
+left to right. A basic operation necessary for this involves reading characters from the input stream and
+matching then with terminals from the grammar that describes the syntax of the input. Our recursive descent
+parsers will look ahead one character and advance the input stream reading pointer when proper matches
+occur. The symbol routine presented bellow accomplishes this matching and reading process.
+Symbol Matching Routine:
+Procedure same(symbol, next):Boolean
+Pre: next = next character on input stream
+Post: return true, advance reading pointer, and set the next to next character
+if symbol = next
+Otherwise return false
+{ if symbol = next
+Then { advance input stream pointer;
+Next = next character from input;
+Match=true}
+Else match=false;
+Return(match) }
+Note that the variable called 'next' looks ahead and always provides the next character that will be read
+from the input stream. This feature is essential if we wish our parsers to be able to predict what is due to
+arrive as input. Note also that an error indicator is returned.
+What a recursive descent parser actually does is to perform a depth-first search of the derivation tree for
+the string being parsed. This provides the 'descent' portion of the name. The 'recursive' portion comes
+from the parser's form, a collection of recursive procedures.
+Implementation details:
+2. Read a string of terminals from user.
+3. Display whether the string is parsed successfully or not.
+New Concepts to be learned:
+How the parsing actually used in compiler design
+______________________________________________________________________
+Stepwise Procedure:
+Consider the simple grammar
+E -> x+T
+T -> (E)
+T -> x
+and the derivation tree in figure 2 for the expression x+(x+x)
+
+EXP5
+
+Theory:
+If we generate machine code directly from source code then for n target machine we will have
+optimizers and n code generator but if we will have a machine-independent intermediate code,
+we will have only one optimizer. Intermediate code can be either language-specific (e.g.,
+Bytecode for Java) or language. independent (three-address code). The following are commonly
+used intermediate code representations:
+1. Postfix Notation: Also known as reverse Polish notation or suffix notation. The
+ordinary (infix) way of writing the sum of a and b is with an operator in the middle: a
++ b The postfix notation for the same expression places the operator at the right end
+as ab +. In general, if e1 and e2 are any postfix expressions, and + is any binary
+operator, the result of applying + to the values denoted by e1 and e2 is postfix
+notation by e1e2 +. No parentheses are needed in postfix notation because the
+position and arity (number of arguments) of the operators permit only one way to
+decode a postfix expression. In postfix notation, the operator follows the operand.
+Example 1: The postfix representation of the expression (a + b) * c is : ab + c *
+Example 2: The postfix representation of the expression (a – b) * (c + d) + (a – b) is
+: ab – cd + *ab -+
+
+2. Three-Address Code: A statement involving no more than three references(two for
+operands and one for result) is known as a three address statement. A sequence of
+three address statements is known as a three address code. Three address statement is
+of form x = y op z, where x, y, and z will have address (memory location).
+Sometimes a statement might contain less than three references but it is still called a
+three address statement.
+Example: The three address code for the expression a + b * c + d : T 1 = b * c T 2 =
+a + T 1 T 3 = T 2 + d T 1 , T 2 , T 3 are temporary variables.
+There are 3 ways to represent a Three-Address Code in compiler design:
+i) Quadruples
+ii) Triples
+iii) Indirect Triples
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 48
+
+3. Syntax Tree: A syntax tree is nothing more than a condensed form of a parse tree.
+The operator and keyword nodes of the parse tree are moved to their parents and a
+chain of single productions is replaced by the single link in the syntax tree the
+internal nodes are operators and child nodes are operands. To form a syntax tree put
+parentheses in the expression, this way it’s easy to recognize which operand should
+come first.
+
+EXP6
+
+Theory: Intermediate code: Three Address Code
+It is a sequence of statements of the general form
+X=Y op Z
+
+Where x,y and z are names, constants or compiler generated temporaries. Op stands for any operator such
+as fixed or floating point arithmetic operator, logical operator on Boolean valued data. Variable names
+can appear directly in three address statements
+Quardruples
+It is a record structure with four fields, which we call op, arg1, arg2 and result. The op field contains an
+internal code for the operator. Three address statemtn x=y op z is represented by placing y in arg1, z in
+arg2 and x in result statement with unary operators like x=-y or x=y do not use arg2. Operators like param
+use neither arg2 nor result.
+Triples
+To avoid entering temporary names into the symbol table, we might refer to a temporary value by the
+position of the statement that computes it. So three address statements can be represented by records with
+only three fields: op, arg1, arg2 as shown above
+
+______________________________________________________________________
+Stepwise-Procedure:
+Code generation Algorithm:
+Example:
+The assignment statement d=(a-b)+(a-c)+(a-c) might be translated into the following three-address code
+sequence.
+
+t=a-b
+u=a-c
+v=t+u
+d=v+u
+
+for three address code statements following code sequence is generated uing code generation algorithm
+Statement Code generated Register descriptor Address descriptor
+
+Register empty
+
+t=a-b MOV a,R0 R0 contains t t in R0
+
+SUB b,R0
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page  55
+u=a-c MOV a, R1 R0 contain t t in R0
+SUB c, R1 R1 contains u u in R1
+v=t+u ADD R1,R0 R0 contains v v in R0
+R1 contains u u in R1
+d=v+u ADD R1, R0 R0 contains d d in R0
+
+MOV R0,d d in R0 & memory
+
+EXP7
+
+Theory : When a string representing a program is broken into sequence of substrings, such that each
+substring represents a constant,identifier,operator , keyword etc of the language, these substrings are called
+the tokens of the Language.The Tokens in a Language are represented by a set of Regular Expressions. A
+regular expression specifies a set of strings to be matched. It contains text characters and operator
+characters. The Advantage of using regular expression is that a recognizer can be automatically generated
+The tokens which are represented by an Regular Expressions are recognized in an input string by means of
+a state transition Diagram and Finite Automata.
+
+Lexical Analysis :
+The Function of a lexical Analyzer is to read the input stream representing the Source program, one
+character ata a time and to translate it into valid tokens.
+TheLexical Analysis and parsing can form two different passes of a Parser. The Lexical analysis can store
+all the recognized tokens in an intermediate file and give it to the Parser as an input. However it is more
+convenient to have the lexical Analyzer as a coroutine or a subroutine which the Parser calls whenever it
+requires a token.
+Regular Expressions
+The following are the most general notations used for expressing a R.E.
+| OR (alternation)
+() Group of Subexpression
+* 0 or more Occurrences
+? 0 or 1 Occurrence
++ 1 or more Occurrences
+{n,m} n-m Occurrences
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 63
+
+Suppose we want to express the 'C' identifiers as a regular Expression:-
+identifier=letter(letter|digit)*
+Where letter denotes the character set a-z & A-Z
+In LEX we can write it as [a-zA-Z][a-zA-Z0-9]*
+The Rules for writting R.E are:-
+* An operator character may be turned into a text character by enclosing it in quotes, or by preceding it
+with a \ (backslash).
+* a/b matches "a" but only if followed by b (the b is not matched)
+* a$ matches "a" only if "a" occurs at the end of a line
+* ^a matches "a" only if "a" occurs at the beginning of a line
+* [abc] matches any charcter that is an "a", "b" or "c"
+* [^abc] matches any charcter but "a", "b" and "c".
+* ab?c matches abc and ac
+* Within the square brackets most operators lose their special meanings except "\" and "-". the "^" which
+takes there special meaning.
+* "\n" always matches newline, with or without the quotes. If you want to match the character "\"
+followed by "n", use \\n.
+Parse Trees
+Parse trees are the Graphical representation of the grammar which filters out
+the choice for replacement order of the Production rules.
+e.g
+for a production P->ABC the parse tree would be
+P
+/ \ \
+/ \ \
+A B C
+Terminals and non-Terminals in a grammar
+Terminals:- All the basic symbols or tokens of which the language is composed of are called Terminals.
+In a Parse Tree the Leafs represents the Terminal Symbol.
+Non-Terminals:- These are syntactic variables in the grammar which represents a set of strings the
+grammar is composed of. In a Parse tree all the inner nodes represents the Non-Terminal symbols.
+Ambiguious Grammars
+A Grammar that produces more than one Parse Tree for the same sentences or the Production rules in a
+grammar is said to be ambiguous.
+e.g consider a simple mathematical expression
+
+E->E*E
+
+This can have two Parse tree according to assocciativity of the operator
+'*'
+
+E E
+/ \ / \
+* E E *
+/ \ / \
+E E E E
+Bottom-up parsing:
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 64
+
+The Parsing method in which the Parse tree is constructed from the input language string begining from
+the leaves and going up to the root node.
+Bottom-Up parsing is also called shift-reduce parsing due to it's implementation.
+The YACC supports shift-reduce pasing.
+e.g Suppose there is a grammar G having a production E
+E->E*E
+and an input string x*y.
+The left hand side of any production are called Handles. thus the handle for this example is E.
+The shift action is simply pushing an input symbol on a stack. When the R.H.S of a production is matched
+the stack elements are popped and replaced by the corresponding Handle. This is the reduce action.
+Thus in the above example , The parser shifts the input token 'x' onto the stack. Then again it shifts the
+token '*' on the top of the stack. Still the production is not satisfied so it shifts the next token 'y' too. Now
+the production E is matched so it pops all the three tokens from the stack and replaces it with the handle
+'E'. Any action that is specified with the rule is carried out.
+
+If the input string reaches the end of file /line and no error has occurred then the
+parser executes the 'Accept' action signifing successfull completion of parsing. Otherwise it executes an
+'Error' action.
+The shift reduce Parsing has a basic limitation. A grammar which can represent a left-sentential parse tree
+as well as right-sentential parse tree cannot be handled by shift reduce parsing. Such a grammar ought to
+have two non-terminals in the production rule. So the Terminal sandwitched between
+these two non-terminals must have some associativity and precedence. This will help the parser to
+understand which non-terminal would be expanded first.
+LR Parser
+The LR means Left-to- Right signifying the parser which reads the input string from left to right. An LR
+parser can be written for almost all Programming constructs.
+
+An LR parser consists of two parts:- Driver Routine & Parsing Table. The Driver routine is
+same for all the Parsers ,only the Parsing Table changes. The Parsing Table is essentially a form of
+representing the State- Transition Diagram for the language. It consists the entries for all
+possible States and the input symbols. In each state there in a predetermined next state depending upon
+the input symbol. If there is any duplicate entry or two next states for the same symbol, then there is an
+ambiguity in the grammar.
+LALR Parser
+LALR is Look-ahead LR parser. It differs from LR in the fact that it will look ahead one symbol in the
+input string before going for a reduce action. Look- ahead helps in knowing if the complete rule has been
+matched or not.
+e.g Consider a grammar G with production
+P->AB|ABC
+When the Parser shifts the Symbol B it can reduce to P . But if the next Symbol was C then it has not
+matched the complete rule. A LALR parser will shift one extra token and then take a decision to reduce or
+shift.
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 65
+
+LEX
+1: create a lex file
+The General Format of a Lex File consists of three sections:
+1. Definitions
+2. Rules
+3. User Subroutines
+Definitions consist of any external 'C' definitions used in the lex actions or subroutines. e.g all
+preprocessor directives like #include, #define macros etc. These are simply copied to the lex.yy.c
+file. The other types of definitions are Lex definitions which are essentially the lex substitution strings,
+Lex start states and lex table size declarations. The Rules is the basic part which specifies the regular
+expressions and their corresponding actions. The User Subroutines are the function definitions of the
+functions that are used in the Lex actions.
+2: Yacc is the Utility which generates the function 'yyparse' which is indeed the Parser. Yacc describes a
+context free , LALR(1) grammar and supports both bottom-up and top-down parsing. The general format
+for the YACC file is very similar to that of the Lex file.
+1. Declarations
+2. Grammar Rules
+3. Subroutines
+In Declarations apart from the legal 'C' declarations there are few Yacc specific declarations which
+begins with a %sign.
+1. %union It defines the Stack type for the Parser. It is a union of various datas/structures/objects.
+2. %token These are the terminals returned by the yylex function to the yacc. A token can also have
+type associated with it for good type checking and syntax directed translation. A type of a token can be
+specified as
+%token <stack member> tokenName.
+3. %type The type of a non-terminal symbol in the Grammar rule can be specified with this. The format
+is %type <stack member> non-terminal.
+4. %noassoc Specifies that there is no associativity of a terminal symbol.
+5. %left Specifies the left associativity of a Terminal Symbol
+6. %right Specifies the right associativity of a Terminal Symbol.
+7. %start Specifies the L.H.S non-terminal symbol of a production rule which should be taken as
+the starting point of the grammar rules.
+8. %prec Changes the precedence level associated with a particular rule to that of the following token
+name or literal.The grammar rules are specified as follows:
+Context-free grammar production- p->AbC
+Yacc Rule- p : A b C { /* 'C' actions */}
+The general style for coding the rules is to have all Terminals in upper-case and all non-terminals in
+lower-case.
+To facilitate a proper syntax directed translation the Yacc has something called pseudo-variables which
+forms a bridge between the values of terminal/non-terminals and the actions. These pseudo variables are
+$$,$1,$2,$3...... The $$ is the L.H.S value of the rule whereas $1 is the first R.H.S value of the rule and
+
+Rizvi College of Engineering CSL601 (SPCC)
+
+Page | 66
+
+so is $2 etc. The default type for pseudo variables is integer unless they are specified by %type ,
+%token <type> etc.
+Implementation
+Using lex and yacc design a simple parser for parsing arithmetic expression In addition to simple expression
+involving operators addition and subtraction , the generated grammar should also handle operator’s like
+multiplication, division unary minus and parenthesized expression. Precedence and associativity of
+operators should be taken care.
+Using lex and yacc design a simple parser for parsing SQL statement. The generated grammar should be
+able parse simple form of SELECT statements.
+
+
